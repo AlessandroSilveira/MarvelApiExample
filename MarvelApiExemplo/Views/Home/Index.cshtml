@@ -1,0 +1,19 @@
+﻿<h1>Exemplo de utilização - Marvel Comics API</h1>
+
+@using MarvelApiExemplo
+@model MarvelApiExemplo.Personagem
+
+<div style="overflow: hidden; margin-top: 50px;">
+	@foreach (var item in ViewBag.lista)
+	{
+		<div style="float: left; margin-right: 50px;">
+			<img src="@item.UrlImagem" height="200" width="200"/>
+		</div>
+		<div style="margin-left: 50px;">
+			<h2><a href="@item.UrlWiki">@item.Nome</a>
+			</h2>
+			<p>@item.Descricao</p>
+		</div>
+	}
+	
+</div>

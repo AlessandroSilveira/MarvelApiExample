@@ -16,46 +16,63 @@ namespace MarvelApiExemplo.Controllers
     {
         public IActionResult Index([FromServices]IConfiguration config)
         {
-	        Personagem personagem;
+            Personagem personagem;
 
-	        using (var client = new HttpClient())
-	        {
-		        client.DefaultRequestHeaders.Accept.Clear();
-				client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            using (var client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-		        string ts = DateTime.Now.Ticks.ToString();
-				string publicKey = config.GetSection("MarvelComicsAPI:PublicKey").Value;
-		        string hash = GerarHash(ts, publicKey,
-			        config.GetSection("MarvelComicsAPI:PrivateKey").Value);
+                string ts = DateTime.Now.Ticks.ToString();
+                string publicKey = config.GetSection("MarvelComicsAPI:PublicKey").Value;
+                string hash = GerarHash(ts, publicKey,
+                    config.GetSection("MarvelComicsAPI:PrivateKey").Value);
 
-		        HttpResponseMessage response = client.GetAsync(config.GetSection("MarvelComicsAPI:BaseUrl").Value +
-		                                                       $"characters?ts={ts}&apikey={publicKey}&hash={hash}&" +
-		                                                       $"name={Uri.EscapeUriString("wolverine")}").Result;
-		        response.EnsureSuccessStatusCode();
-		        string conteudo = response.Content.ReadAsStringAsync().Result;
+                HttpResponseMessage response = client.GetAsync(config.GetSection("MarvelComicsAPI:BaseUrl").Value +
+                                                               $"characters?ts={ts}&apikey={publicKey}&hash={hash}&" +
+                                                               $"limit=20").Result;
+                response.EnsureSuccessStatusCode();
+                string conteudo = response.Content.ReadAsStringAsync().Result;
 
-		        dynamic resultado = JsonConvert.DeserializeObject(conteudo);
+                dynamic resultado = JsonConvert.DeserializeObject(conteudo);
 
-		        personagem = new Personagem
-		        {
-			        Nome = resultado.data.results[0].name,
-			        Descricao = resultado.data.results[0].description,
-			        UrlImagem = resultado.data.results[0].thumbnail.path + "." +
-			                    resultado.data.results[0].thumbnail.extension,
-			        UrlWiki = resultado.data.results[0].urls[1].url
-		        };
-	        }
-	        return View(personagem);
+                List<Personagem> personagens = new List<Personagem>();
+
+                for (int i = 0; i < resultado.data.results.Count; i++)
+                {
+                    personagens.Add(new Personagem
+                    {
+                        Nome = resultado.data.results[i].name,
+                        Descricao = resultado.data.results[i].description,
+                        UrlImagem = resultado.data.results[i].thumbnail.path + "." +
+                                     resultado.data.results[i].thumbnail.extension,
+                    });
+                }
+                //personagem = new Personagem
+                //{
+                // Nome = resultado.data.results[0].name,
+                // Descricao = resultado.data.results[0].description,
+                // UrlImagem = resultado.data.results[0].thumbnail.path + "." +
+                //             resultado.data.results[0].thumbnail.extension,
+                // UrlWiki = resultado.data.results[0].urls[1].url
+                //};
+
+
+                ViewBag.ListaPersonagens = personagens;
+               
+            }
+            return View();
+            // return View(personagem);
 
         }
 
-	    private string GerarHash(string ts, string publicKey, string privateKey)
-	    {
-		    byte[] bytes = Encoding.UTF8.GetBytes(ts + privateKey + publicKey);
-		    var gerador = MD5.Create();
-		    byte[] bytesHash = gerador.ComputeHash(bytes);
-		    return BitConverter.ToString(bytesHash).ToLower().Replace("-", String.Empty);
-	    }
+        private string GerarHash(string ts, string publicKey, string privateKey)
+        {
+            byte[] bytes = Encoding.UTF8.GetBytes(ts + privateKey + publicKey);
+            var gerador = MD5.Create();
+            byte[] bytesHash = gerador.ComputeHash(bytes);
+            return BitConverter.ToString(bytesHash).ToLower().Replace("-", String.Empty);
+        }
 
 
     }
